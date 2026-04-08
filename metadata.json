@@ -1,0 +1,5 @@
+{
+  "name": "Employee Data Management System",
+  "description": "A React application to fetch, view, and update employee details from Google Sheets using EHRMS CODE.",
+  "requestFramePermissions": []
+}
