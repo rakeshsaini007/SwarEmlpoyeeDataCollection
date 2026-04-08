@@ -6,7 +6,7 @@
 import React, { useState, FormEvent } from 'react';
 import { 
   Search, Save, RefreshCw, User, School, CreditCard, 
-  Calendar, Hash, AlertCircle, CheckCircle2, Mail, 
+  Hash, AlertCircle, CheckCircle2, Mail, 
   ArrowRight, ShieldCheck, Database, Phone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -194,9 +194,6 @@ export default function App() {
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 bg-gradient-to-b from-slate-900 to-slate-700 bg-clip-text text-transparent">
             Employee Intelligence
           </h1>
-          <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base font-light leading-relaxed">
-            A high-performance interface for managing organizational human capital with real-time Google Sheets synchronization.
-          </p>
         </motion.header>
 
         {/* Search Section */}
@@ -296,7 +293,7 @@ export default function App() {
                       label="Date of Birth"
                       value={formData["Date of Birth"]}
                       onChange={(v) => handleInputChange("Date of Birth", v)}
-                      type="date"
+                      placeholder="DD/MM/YYYY"
                     />
                   </div>
                   <FormField
@@ -381,13 +378,13 @@ export default function App() {
                       label="Joining Date"
                       value={formData["Joining Date in Service"]}
                       onChange={(v) => handleInputChange("Joining Date in Service", v)}
-                      type="date"
+                      placeholder="DD/MM/YYYY"
                     />
                     <FormField
                       label="Retirement Date"
                       value={formData["Date of Retirement"]}
                       onChange={(v) => handleInputChange("Date of Retirement", v)}
-                      type="date"
+                      placeholder="DD/MM/YYYY"
                     />
                   </div>
                 </div>

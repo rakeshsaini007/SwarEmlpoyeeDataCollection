@@ -18,7 +18,7 @@ function doGet(e) {
   }
 
   const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  const headers = data[0].map(h => h.toString().trim());
   const ehrmsIndex = headers.indexOf("EHRMS CODE");
 
   if (ehrmsIndex === -1) {
@@ -29,7 +29,31 @@ function doGet(e) {
     if (data[i][ehrmsIndex].toString() === ehrmsCode.toString()) {
       const employeeData = {};
       headers.forEach((header, index) => {
-        employeeData[header] = data[i][index];
+        let value = data[i][index];
+        if (value instanceof Date) {
+          value = Utilities.formatDate(value, ss.getSpreadsheetTimeZone(), "dd/MM/yyyy");
+        } else if (value && (header.includes("Date") || header.includes("Birth"))) {
+          // If it's a string that should be a date, try to normalize it
+          let dateObj = null;
+          if (typeof value === 'string' && value.includes('/')) {
+            const parts = value.split('/');
+            if (parts.length === 3) {
+              // Try to handle DD/MM/YYYY
+              if (parts[2].length === 4) {
+                dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+              }
+            }
+          }
+          
+          if (!dateObj || isNaN(dateObj.getTime())) {
+            dateObj = new Date(value);
+          }
+
+          if (dateObj && !isNaN(dateObj.getTime())) {
+            value = Utilities.formatDate(dateObj, ss.getSpreadsheetTimeZone(), "dd/MM/yyyy");
+          }
+        }
+        employeeData[header] = value;
       });
       return createResponse({ status: "success", data: employeeData, exists: true });
     }
@@ -56,7 +80,7 @@ function doPost(e) {
     }
 
     const data = sheet.getDataRange().getValues();
-    const headers = data[0];
+    const headers = data[0].map(h => h.toString().trim());
     const ehrmsIndex = headers.indexOf("EHRMS CODE");
     const ehrmsCode = payload["EHRMS CODE"];
     
