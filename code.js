@@ -31,14 +31,15 @@ function doGet(e) {
       headers.forEach((header, index) => {
         let value = data[i][index];
         if (value instanceof Date) {
-          value = Utilities.formatDate(value, ss.getSpreadsheetTimeZone(), "dd/MM/yyyy");
+          value = Utilities.formatDate(value, ss.getSpreadsheetTimeZone(), "dd-MM-yyyy");
         } else if (value && (header.includes("Date") || header.includes("Birth"))) {
           // If it's a string that should be a date, try to normalize it
           let dateObj = null;
-          if (typeof value === 'string' && value.includes('/')) {
-            const parts = value.split('/');
+          if (typeof value === 'string' && (value.includes('/') || value.includes('-'))) {
+            const separator = value.includes('/') ? '/' : '-';
+            const parts = value.split(separator);
             if (parts.length === 3) {
-              // Try to handle DD/MM/YYYY
+              // Try to handle DD-MM-YYYY or DD/MM/YYYY
               if (parts[2].length === 4) {
                 dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
               }
@@ -50,7 +51,7 @@ function doGet(e) {
           }
 
           if (dateObj && !isNaN(dateObj.getTime())) {
-            value = Utilities.formatDate(dateObj, ss.getSpreadsheetTimeZone(), "dd/MM/yyyy");
+            value = Utilities.formatDate(dateObj, ss.getSpreadsheetTimeZone(), "dd-MM-yyyy");
           }
         }
         employeeData[header] = value;

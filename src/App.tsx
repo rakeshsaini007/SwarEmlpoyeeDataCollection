@@ -157,6 +157,26 @@ export default function App() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDateChange = (key: keyof EmployeeData, value: string) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '');
+    let formatted = digits;
+    
+    if (digits.length > 2) {
+      formatted = digits.substring(0, 2) + '-' + digits.substring(2);
+    }
+    if (digits.length > 4) {
+      formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4) + '-' + digits.substring(4, 8);
+    }
+    
+    // Limit to 10 characters (DD-MM-YYYY)
+    if (formatted.length > 10) {
+      formatted = formatted.substring(0, 10);
+    }
+    
+    setFormData(prev => ({ ...prev, [key]: formatted }));
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -292,8 +312,8 @@ export default function App() {
                     <FormField
                       label="Date of Birth"
                       value={formData["Date of Birth"]}
-                      onChange={(v) => handleInputChange("Date of Birth", v)}
-                      placeholder="DD/MM/YYYY"
+                      onChange={(v) => handleDateChange("Date of Birth", v)}
+                      placeholder="DD-MM-YYYY"
                     />
                   </div>
                   <FormField
@@ -377,14 +397,14 @@ export default function App() {
                     <FormField
                       label="Joining Date"
                       value={formData["Joining Date in Service"]}
-                      onChange={(v) => handleInputChange("Joining Date in Service", v)}
-                      placeholder="DD/MM/YYYY"
+                      onChange={(v) => handleDateChange("Joining Date in Service", v)}
+                      placeholder="DD-MM-YYYY"
                     />
                     <FormField
                       label="Retirement Date"
                       value={formData["Date of Retirement"]}
-                      onChange={(v) => handleInputChange("Date of Retirement", v)}
-                      placeholder="DD/MM/YYYY"
+                      onChange={(v) => handleDateChange("Date of Retirement", v)}
+                      placeholder="DD-MM-YYYY"
                     />
                   </div>
                 </div>
