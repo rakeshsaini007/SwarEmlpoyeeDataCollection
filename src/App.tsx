@@ -3,8 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, FormEvent } from 'react';
-import { Search, Save, RefreshCw, User, School, CreditCard, Calendar, Hash, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, FormEvent } from 'react';
+import { 
+  Search, Save, RefreshCw, User, School, CreditCard, 
+  Calendar, Hash, AlertCircle, CheckCircle2, Mail, 
+  ArrowRight, ShieldCheck, Database, Phone
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Types for our form data
@@ -64,9 +68,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isExists, setIsExists] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [scriptUrl, setScriptUrl] = useState("https://script.google.com/macros/s/AKfycbyH6faFA2UT0pEwXLPKKPFjkJlIYEj_9Yenx4szLw5Cq8j6NXUYk0VPbsLnFaLZKiKD/exec");
+  const [scriptUrl] = useState("https://script.google.com/macros/s/AKfycbyH6faFA2UT0pEwXLPKKPFjkJlIYEj_9Yenx4szLw5Cq8j6NXUYk0VPbsLnFaLZKiKD/exec");
 
-  // Readonly fields as specified
   const readonlyFields = [
     "EMPLOYEE NAME", "DESIGNATION", "UDISE CODE", "SCHOOL NAME", "NYAY PANCHAYAT", "Employee Type"
   ];
@@ -74,10 +77,6 @@ export default function App() {
   const handleFetch = async () => {
     if (!searchCode) {
       setMessage({ type: 'error', text: "Please enter EHRMS CODE" });
-      return;
-    }
-    if (!scriptUrl) {
-      setMessage({ type: 'error', text: "Please provide the Google Apps Script Web App URL first." });
       return;
     }
 
@@ -96,46 +95,33 @@ export default function App() {
             "EHRMS CODE": searchCode
           });
           setIsExists(true);
-          setMessage({ type: 'success', text: "Data fetched successfully!" });
+          setMessage({ type: 'success', text: "Employee record found and synchronized." });
         } else {
           setFormData({ ...INITIAL_DATA, "EHRMS CODE": searchCode });
           setIsExists(false);
-          setMessage({ type: 'error', text: "Employee not found. You can enter details to save." });
+          setMessage({ type: 'error', text: "No record found. You can initialize a new entry." });
         }
       } else {
-        setMessage({ type: 'error', text: result.message || "Failed to fetch data" });
+        setMessage({ type: 'error', text: result.message || "Synchronization failed." });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: "Error connecting to server. Check your Script URL and CORS settings." });
+      setMessage({ type: 'error', text: "Network error. Please verify your connection." });
     } finally {
       setIsLoading(false);
     }
   };
 
   const validate = () => {
-    if (!formData["AADHAR NUMBER"] || !AADHAR_REGEX.test(formData["AADHAR NUMBER"])) {
-      return "Aadhar number must be exactly 12 digits.";
-    }
-    if (!formData["PAN NUMBER"] || !PAN_REGEX.test(formData["PAN NUMBER"])) {
-      return "Invalid PAN format (e.g., ABCDE1234F).";
-    }
-    if (!formData["ACCOUNT NUMBER"] || formData["ACCOUNT NUMBER"].length <= 10 || isNaN(Number(formData["ACCOUNT NUMBER"]))) {
-      return "Account number must be numeric and greater than 10 digits.";
-    }
-    if (!formData["IFSC CODE"] || !IFSC_REGEX.test(formData["IFSC CODE"])) {
-      return "Invalid IFSC format (4 letters, 1 digit, 6 alphanumeric).";
-    }
-    if (!formData["MOBILE NUMBER"] || !MOBILE_REGEX.test(formData["MOBILE NUMBER"])) {
-      return "Mobile number must be 10 digits.";
-    }
-    if (!formData["EMAIL Address"] || !EMAIL_REGEX.test(formData["EMAIL Address"])) {
-      return "Please enter a valid email address.";
-    }
+    if (!formData["AADHAR NUMBER"] || !AADHAR_REGEX.test(formData["AADHAR NUMBER"])) return "Aadhar must be 12 digits.";
+    if (!formData["PAN NUMBER"] || !PAN_REGEX.test(formData["PAN NUMBER"])) return "Invalid PAN format.";
+    if (!formData["ACCOUNT NUMBER"] || formData["ACCOUNT NUMBER"].length <= 10) return "Invalid Account Number.";
+    if (!formData["IFSC CODE"] || !IFSC_REGEX.test(formData["IFSC CODE"])) return "Invalid IFSC format.";
+    if (!formData["MOBILE NUMBER"] || !MOBILE_REGEX.test(formData["MOBILE NUMBER"])) return "Invalid Mobile Number.";
+    if (!formData["EMAIL Address"] || !EMAIL_REGEX.test(formData["EMAIL Address"])) return "Invalid Email Address.";
 
-    // Check mandatory fields
     for (const key in formData) {
       if (key !== 'Timestamp' && !formData[key as keyof EmployeeData]) {
-        return `${key} is mandatory.`;
+        return `${key} is required.`;
       }
     }
     return null;
@@ -149,26 +135,19 @@ export default function App() {
       return;
     }
 
-    if (!scriptUrl) {
-      setMessage({ type: 'error', text: "Please provide the Google Apps Script Web App URL." });
-      return;
-    }
-
     setIsLoading(true);
     try {
       await fetch(scriptUrl, {
         method: 'POST',
         mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      setMessage({ type: 'success', text: isExists ? "Data updated successfully!" : "Data saved successfully!" });
+      setMessage({ type: 'success', text: isExists ? "Record updated successfully." : "New record saved successfully." });
       setIsExists(true);
     } catch (error) {
-      setMessage({ type: 'error', text: "Failed to save data." });
+      setMessage({ type: 'error', text: "Failed to persist data." });
     } finally {
       setIsLoading(false);
     }
@@ -178,71 +157,90 @@ export default function App() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F5F5F5] text-[#1A1A1A] font-sans p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-8 text-center">
-          <h1 className="text-3xl font-light tracking-tight text-gray-900 mb-2">
-            Employee Data Management
-          </h1>
-          <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">
-            Google Sheets Integration System
-          </p>
-        </header>
+    <div className="min-h-screen bg-[#F0F7FF] text-slate-900 font-sans selection:bg-blue-200 overflow-x-hidden">
+      {/* Premium Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-400/20 blur-[120px] rounded-full" />
+        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-purple-400/10 blur-[100px] rounded-full" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[50%] h-[50%] bg-emerald-400/10 blur-[150px] rounded-full" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-multiply" />
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1 w-full">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Google Apps Script Web App URL
-              </label>
-              <input
-                type="text"
-                value={scriptUrl}
-                onChange={(e) => setScriptUrl(e.target.value)}
-                placeholder="https://script.google.com/macros/s/.../exec"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-              />
-            </div>
+      <div className="relative max-w-6xl mx-auto px-4 py-12 md:py-20">
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-16 text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-200 mb-6 backdrop-blur-md">
+            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600">Secure Database Access</span>
           </div>
-        </div>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 bg-gradient-to-b from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            Employee Intelligence
+          </h1>
+          <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base font-light leading-relaxed">
+            A high-performance interface for managing organizational human capital with real-time Google Sheets synchronization.
+          </p>
+        </motion.header>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1 w-full">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                Enter EHRMS CODE to Fetch Details
-              </label>
-              <div className="relative">
-                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+        {/* Search Section */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-2xl mx-auto mb-20"
+        >
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200" />
+            <div className="relative flex flex-col md:flex-row gap-3 p-2 bg-white/80 backdrop-blur-xl border border-blue-100 rounded-2xl shadow-xl shadow-blue-900/5">
+              <div className="flex-1 relative">
+                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
                   type="text"
                   value={searchCode}
                   onChange={(e) => setSearchCode(e.target.value)}
-                  placeholder="e.g. 655173"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                  placeholder="Enter EHRMS Code..."
+                  className="w-full pl-12 pr-4 py-4 bg-transparent text-lg font-light focus:outline-none placeholder:text-slate-300 text-slate-900"
                 />
               </div>
+              <button
+                onClick={handleFetch}
+                disabled={isLoading}
+                className="px-8 py-4 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 shadow-lg shadow-slate-900/20"
+              >
+                {isLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                <span>Synchronize</span>
+              </button>
             </div>
-            <button
-              onClick={handleFetch}
-              disabled={isLoading}
-              className="w-full md:w-auto px-8 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              Fetch Details
-            </button>
           </div>
-        </div>
+        </motion.div>
 
-        <AnimatePresence>
+        {/* Status Message */}
+        <AnimatePresence mode="wait">
           {message && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`mb-8 p-4 rounded-xl flex items-center gap-3 ${
-                message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`max-w-2xl mx-auto mb-12 p-4 rounded-xl flex items-center gap-3 backdrop-blur-md border shadow-sm ${
+                message.type === 'success' 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                : 'bg-red-50 text-red-700 border-red-100'
               }`}
             >
               {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -251,179 +249,240 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <User className="w-5 h-5 text-blue-600" />
+        {/* Main Form */}
+        <motion.form 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          onSubmit={handleSubmit} 
+          className="space-y-12"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* Personal Details Section */}
+            <motion.section variants={itemVariants} className="group relative">
+              <div className="absolute -inset-px bg-gradient-to-b from-blue-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative h-full bg-white/70 backdrop-blur-sm border border-blue-100 p-8 rounded-3xl shadow-sm">
+                <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                      <User className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight text-slate-900">Identity</h2>
+                      <p className="text-xs text-slate-500">Personal information profile</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Section 01</div>
                 </div>
-                <h2 className="text-lg font-semibold">Personal Details</h2>
-              </div>
-              
-              <div className="space-y-5">
-                <FormField
-                  label="Employee Name"
-                  value={formData["EMPLOYEE NAME"]}
-                  onChange={(v) => handleInputChange("EMPLOYEE NAME", v)}
-                  readonly={readonlyFields.includes("EMPLOYEE NAME")}
-                />
-                <div className="grid grid-cols-2 gap-4">
+                
+                <div className="space-y-6">
                   <FormField
-                    label="Gender"
-                    value={formData["GENDER"]}
-                    onChange={(v) => handleInputChange("GENDER", v)}
-                    type="select"
-                    options={["Male", "Female", "Other"]}
+                    label="Full Employee Name"
+                    value={formData["EMPLOYEE NAME"]}
+                    onChange={(v) => handleInputChange("EMPLOYEE NAME", v)}
+                    readonly={readonlyFields.includes("EMPLOYEE NAME")}
+                    icon={<User className="w-4 h-4" />}
                   />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      label="Gender"
+                      value={formData["GENDER"]}
+                      onChange={(v) => handleInputChange("GENDER", v)}
+                      type="select"
+                      options={["Male", "Female", "Other"]}
+                    />
+                    <FormField
+                      label="Date of Birth"
+                      value={formData["Date of Birth"]}
+                      onChange={(v) => handleInputChange("Date of Birth", v)}
+                      type="date"
+                    />
+                  </div>
                   <FormField
-                    label="Date of Birth"
-                    value={formData["Date of Birth"]}
-                    onChange={(v) => handleInputChange("Date of Birth", v)}
-                    type="date"
+                    label="Father's Name"
+                    value={formData["FATHER NAME"]}
+                    onChange={(v) => handleInputChange("FATHER NAME", v)}
                   />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      label="Mobile Contact"
+                      value={formData["MOBILE NUMBER"]}
+                      onChange={(v) => handleInputChange("MOBILE NUMBER", v)}
+                      placeholder="10-digit number"
+                      icon={<Phone className="w-4 h-4" />}
+                    />
+                    <FormField
+                      label="Email Address"
+                      value={formData["EMAIL Address"]}
+                      onChange={(v) => handleInputChange("EMAIL Address", v)}
+                      placeholder="name@domain.com"
+                      icon={<Mail className="w-4 h-4" />}
+                    />
+                  </div>
                 </div>
-                <FormField
-                  label="Father Name"
-                  value={formData["FATHER NAME"]}
-                  onChange={(v) => handleInputChange("FATHER NAME", v)}
-                />
-                <FormField
-                  label="Mobile Number"
-                  value={formData["MOBILE NUMBER"]}
-                  onChange={(v) => handleInputChange("MOBILE NUMBER", v)}
-                  placeholder="10 digits"
-                />
-                <FormField
-                  label="EMAIL Address"
-                  value={formData["EMAIL Address"]}
-                  onChange={(v) => handleInputChange("EMAIL Address", v)}
-                  placeholder="example@mail.com"
-                />
               </div>
-            </section>
+            </motion.section>
 
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <School className="w-5 h-5 text-purple-600" />
+            {/* Professional Details Section */}
+            <motion.section variants={itemVariants} className="group relative">
+              <div className="absolute -inset-px bg-gradient-to-b from-purple-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative h-full bg-white/70 backdrop-blur-sm border border-blue-100 p-8 rounded-3xl shadow-sm">
+                <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
+                      <School className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight text-slate-900">Professional</h2>
+                      <p className="text-xs text-slate-500">Employment & deployment</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Section 02</div>
                 </div>
-                <h2 className="text-lg font-semibold">Professional Details</h2>
+                
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      label="Designation"
+                      value={formData["DESIGNATION"]}
+                      onChange={(v) => handleInputChange("DESIGNATION", v)}
+                      readonly={readonlyFields.includes("DESIGNATION")}
+                    />
+                    <FormField
+                      label="Employment Type"
+                      value={formData["Employee Type"]}
+                      onChange={(v) => handleInputChange("Employee Type", v)}
+                      readonly={readonlyFields.includes("Employee Type")}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      label="UDISE Code"
+                      value={formData["UDISE CODE"]}
+                      onChange={(v) => handleInputChange("UDISE CODE", v)}
+                      readonly={readonlyFields.includes("UDISE CODE")}
+                    />
+                    <FormField
+                      label="Nyay Panchayat"
+                      value={formData["NYAY PANCHAYAT"]}
+                      onChange={(v) => handleInputChange("NYAY PANCHAYAT", v)}
+                      readonly={readonlyFields.includes("NYAY PANCHAYAT")}
+                    />
+                  </div>
+                  <FormField
+                    label="Assigned School Name"
+                    value={formData["SCHOOL NAME"]}
+                    onChange={(v) => handleInputChange("SCHOOL NAME", v)}
+                    readonly={readonlyFields.includes("SCHOOL NAME")}
+                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                      label="Joining Date"
+                      value={formData["Joining Date in Service"]}
+                      onChange={(v) => handleInputChange("Joining Date in Service", v)}
+                      type="date"
+                    />
+                    <FormField
+                      label="Retirement Date"
+                      value={formData["Date of Retirement"]}
+                      onChange={(v) => handleInputChange("Date of Retirement", v)}
+                      type="date"
+                    />
+                  </div>
+                </div>
               </div>
-              
-              <div className="space-y-5">
-                <FormField
-                  label="Designation"
-                  value={formData["DESIGNATION"]}
-                  onChange={(v) => handleInputChange("DESIGNATION", v)}
-                  readonly={readonlyFields.includes("DESIGNATION")}
-                />
-                <FormField
-                  label="Employee Type"
-                  value={formData["Employee Type"]}
-                  onChange={(v) => handleInputChange("Employee Type", v)}
-                  readonly={readonlyFields.includes("Employee Type")}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    label="UDISE Code"
-                    value={formData["UDISE CODE"]}
-                    onChange={(v) => handleInputChange("UDISE CODE", v)}
-                    readonly={readonlyFields.includes("UDISE CODE")}
-                  />
-                  <FormField
-                    label="Nyay Panchayat"
-                    value={formData["NYAY PANCHAYAT"]}
-                    onChange={(v) => handleInputChange("NYAY PANCHAYAT", v)}
-                    readonly={readonlyFields.includes("NYAY PANCHAYAT")}
-                  />
-                </div>
-                <FormField
-                  label="School Name"
-                  value={formData["SCHOOL NAME"]}
-                  onChange={(v) => handleInputChange("SCHOOL NAME", v)}
-                  readonly={readonlyFields.includes("SCHOOL NAME")}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    label="Joining Date"
-                    value={formData["Joining Date in Service"]}
-                    onChange={(v) => handleInputChange("Joining Date in Service", v)}
-                    type="date"
-                  />
-                  <FormField
-                    label="Retirement Date"
-                    value={formData["Date of Retirement"]}
-                    onChange={(v) => handleInputChange("Date of Retirement", v)}
-                    type="date"
-                  />
-                </div>
-              </div>
-            </section>
+            </motion.section>
 
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:col-span-2">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-emerald-50 rounded-lg">
-                  <CreditCard className="w-5 h-5 text-emerald-600" />
+            {/* Financial Details Section */}
+            <motion.section variants={itemVariants} className="lg:col-span-2 group relative">
+              <div className="absolute -inset-px bg-gradient-to-b from-emerald-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative bg-white/70 backdrop-blur-sm border border-blue-100 p-8 rounded-3xl shadow-sm">
+                <div className="flex items-center justify-between mb-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                      <CreditCard className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight text-slate-900">Financial & Identity</h2>
+                      <p className="text-xs text-slate-500">Secure banking and government IDs</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Section 03</div>
                 </div>
-                <h2 className="text-lg font-semibold">Financial & Identity Details</h2>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                  <FormField
+                    label="PAN Number"
+                    value={formData["PAN NUMBER"]}
+                    onChange={(v) => handleInputChange("PAN NUMBER", v.toUpperCase())}
+                    placeholder="ABCDE1234F"
+                  />
+                  <FormField
+                    label="Aadhar Number"
+                    value={formData["AADHAR NUMBER"]}
+                    onChange={(v) => handleInputChange("AADHAR NUMBER", v)}
+                    placeholder="12-digit UID"
+                  />
+                  <FormField
+                    label="Account Number"
+                    value={formData["ACCOUNT NUMBER"]}
+                    onChange={(v) => handleInputChange("ACCOUNT NUMBER", v)}
+                    placeholder="Banking ID"
+                  />
+                  <FormField
+                    label="IFSC Code"
+                    value={formData["IFSC CODE"]}
+                    onChange={(v) => handleInputChange("IFSC CODE", v.toUpperCase())}
+                    placeholder="Branch Code"
+                  />
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FormField
-                  label="PAN Number"
-                  value={formData["PAN NUMBER"]}
-                  onChange={(v) => handleInputChange("PAN NUMBER", v.toUpperCase())}
-                  placeholder="ABCDE1234F"
-                />
-                <FormField
-                  label="Aadhar Number"
-                  value={formData["AADHAR NUMBER"]}
-                  onChange={(v) => handleInputChange("AADHAR NUMBER", v)}
-                  placeholder="12 digits"
-                />
-                <FormField
-                  label="Account Number"
-                  value={formData["ACCOUNT NUMBER"]}
-                  onChange={(v) => handleInputChange("ACCOUNT NUMBER", v)}
-                  placeholder="Min 11 digits"
-                />
-                <FormField
-                  label="IFSC Code"
-                  value={formData["IFSC CODE"]}
-                  onChange={(v) => handleInputChange("IFSC CODE", v.toUpperCase())}
-                  placeholder="ABCD0123456"
-                />
-              </div>
-            </section>
+            </motion.section>
           </div>
 
-          <div className="flex flex-col items-center gap-4 py-8">
+          {/* Submit Button */}
+          <motion.div variants={itemVariants} className="flex flex-col items-center gap-6 pt-12 pb-20">
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full max-w-md py-4 rounded-2xl font-semibold text-lg shadow-lg transition-all flex items-center justify-center gap-3 ${
-                isExists 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200' 
-                : 'bg-gray-900 hover:bg-black text-white shadow-gray-200'
-              } disabled:opacity-50`}
+              className="group relative w-full max-w-md overflow-hidden rounded-2xl bg-slate-900 p-[1px] transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-slate-900/20"
             >
-              {isLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-              {isExists ? "Update Employee Data" : "Submit Employee Data"}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative flex items-center justify-center gap-3 bg-slate-900 px-8 py-5 text-white rounded-[15px] font-bold text-lg group-hover:bg-transparent transition-all duration-300">
+                {isLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : (isExists ? <RefreshCw className="w-6 h-6" /> : <Save className="w-6 h-6" />)}
+                <span>{isExists ? "Update Synchronized Data" : "Initialize New Record"}</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </div>
             </button>
+            
             {formData.Timestamp && (
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Last updated: {formData.Timestamp}
-              </p>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/5 border border-slate-200 text-[10px] text-slate-500 uppercase tracking-widest"
+              >
+                <Database className="w-3 h-3" />
+                <span>Last Sync: {formData.Timestamp}</span>
+              </motion.div>
             )}
-          </div>
-        </form>
+          </motion.div>
+        </motion.form>
       </div>
+
+      {/* Footer Branding */}
+      <footer className="relative py-10 border-t border-blue-100 text-center">
+        <div className="flex items-center justify-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all duration-500">
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-900">Enterprise Grade</div>
+          <div className="w-1 h-1 rounded-full bg-slate-900" />
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-900">Cloud Native</div>
+        </div>
+      </footer>
     </div>
   );
 }
 
+// Refined Form Field Component
 function FormField({ 
   label, 
   value, 
@@ -431,7 +490,8 @@ function FormField({
   readonly = false, 
   type = "text", 
   placeholder = "",
-  options = []
+  options = [],
+  icon
 }: { 
   label: string; 
   value: string; 
@@ -440,40 +500,53 @@ function FormField({
   type?: "text" | "date" | "select";
   placeholder?: string;
   options?: string[];
+  icon?: React.ReactNode;
 }) {
   return (
-    <div className="w-full">
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 ml-1">
+    <div className="w-full group/field">
+      <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2.5 ml-1 group-focus-within/field:text-blue-600 transition-colors">
         {label}
       </label>
-      {type === "select" ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={readonly}
-          className={`w-full px-4 py-2.5 rounded-xl border transition-all outline-none appearance-none bg-gray-50 ${
-            readonly 
-            ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' 
-            : 'border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-          }`}
-        >
-          <option value="">Select {label}</option>
-          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-        </select>
-      ) : (
-        <input
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          readOnly={readonly}
-          placeholder={placeholder}
-          className={`w-full px-4 py-2.5 rounded-xl border transition-all outline-none ${
-            readonly 
-            ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' 
-            : 'bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-          }`}
-        />
-      )}
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/field:text-blue-600 transition-colors">
+            {icon}
+          </div>
+        )}
+        {type === "select" ? (
+          <select
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={readonly}
+            className={`w-full px-4 py-3.5 rounded-xl border transition-all outline-none appearance-none bg-white/50 ${
+              readonly 
+              ? 'border-slate-100 text-slate-400 cursor-not-allowed bg-slate-50/50' 
+              : 'border-blue-100 focus:border-blue-500/50 focus:bg-white text-slate-900'
+            } ${icon ? 'pl-11' : ''}`}
+          >
+            <option value="" className="bg-white">Select...</option>
+            {options.map(opt => <option key={opt} value={opt} className="bg-white">{opt}</option>)}
+          </select>
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            readOnly={readonly}
+            placeholder={placeholder}
+            className={`w-full px-4 py-3.5 rounded-xl border transition-all outline-none bg-white/50 ${
+              readonly 
+              ? 'border-slate-100 text-slate-400 cursor-not-allowed bg-slate-50/50' 
+              : 'border-blue-100 focus:border-blue-500/50 focus:bg-white text-slate-900 placeholder:text-slate-200'
+            } ${icon ? 'pl-11' : ''}`}
+          />
+        )}
+        {readonly && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-200" title="Read-only" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
