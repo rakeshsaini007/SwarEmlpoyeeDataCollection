@@ -158,22 +158,25 @@ export default function App() {
   };
 
   const handleDateChange = (key: keyof EmployeeData, value: string) => {
+    const prevValue = formData[key] || "";
+    const isDeleting = value.length < prevValue.length;
+
+    if (isDeleting) {
+      setFormData(prev => ({ ...prev, [key]: value }));
+      return;
+    }
+
     // Remove non-digits
-    const digits = value.replace(/\D/g, '');
+    let digits = value.replace(/\D/g, '');
+    if (digits.length > 8) digits = digits.substring(0, 8);
+
     let formatted = digits;
-    
-    if (digits.length > 2) {
-      formatted = digits.substring(0, 2) + '-' + digits.substring(2);
+    if (digits.length >= 2 && digits.length < 4) {
+      formatted = `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    } else if (digits.length >= 4) {
+      formatted = `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
     }
-    if (digits.length > 4) {
-      formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4) + '-' + digits.substring(4, 8);
-    }
-    
-    // Limit to 10 characters (DD-MM-YYYY)
-    if (formatted.length > 10) {
-      formatted = formatted.substring(0, 10);
-    }
-    
+
     setFormData(prev => ({ ...prev, [key]: formatted }));
   };
 
